@@ -1,0 +1,32 @@
+{
+    "5150098510": {
+        "user_id": 5150098510,
+        "phone": "+992100100100",
+        "first_name": "тт",
+        "last_name": "ьь",
+        "pin_code": "6556",
+        "balance": 1000.0,
+        "created_at": "2026-02-12 15:29:28",
+        "telegram_id": 5150098509
+    },
+    "5150098511": {
+        "user_id": 5150098511,
+        "phone": "+992935798811",
+        "first_name": "AKRAM",
+        "last_name": "DAVLATZODA",
+        "pin_code": "1109",
+        "balance": 121.0,
+        "created_at": "2026-02-13 17:38:22",
+        "telegram_id": 5150098511
+    },
+    "5150098512": {
+        "user_id": 5150098512,
+        "phone": "+992870222009",
+        "first_name": "Лолабону",
+        "last_name": "Раджабова",
+        "pin_code": "1111",
+        "balance": 1879.0,
+        "created_at": "2026-02-13 17:45:48",
+        "telegram_id": 5150098509
+    }
+}
