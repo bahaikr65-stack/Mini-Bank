@@ -29,8 +29,14 @@ class BaseModel(ABC):
 
 
 class User(BaseModel):
+    """
+    telegram_chat_id — ID чата в Telegram.
+    Заполняется при регистрации через бот.
+    Через него бот отправляет уведомления.
+    """
+
     def __init__(self, user_id, phone, first_name, last_name,
-                 pin_code, balance=0.0, telegram_id=None):
+                 pin_code, balance=0.0, telegram_chat_id=None):
         super().__init__()
         self.user_id = user_id
         self.phone = phone
@@ -38,7 +44,8 @@ class User(BaseModel):
         self.last_name = last_name
         self.__pin_code = pin_code
         self.__balance = balance
-        self.telegram_id = telegram_id  # Настоящий Telegram ID пользователя
+        # ← ID чата Telegram для уведомлений
+        self.telegram_chat_id = telegram_chat_id
 
     @property
     def balance(self):
@@ -83,17 +90,20 @@ class User(BaseModel):
             "last_name": self.last_name,
             "pin_code": self.__pin_code,
             "balance": self.__balance,
+            "telegram_chat_id": self.telegram_chat_id,
             "created_at": self.created_at,
-            "telegram_id": self.telegram_id,  # Добавлено поле
         }
 
     @classmethod
     def from_dict(cls, data):
         u = cls(
-            user_id=data["user_id"], phone=data["phone"],
-            first_name=data["first_name"], last_name=data["last_name"],
-            pin_code=data["pin_code"], balance=data["balance"],
-            telegram_id=data.get("telegram_id"),  # Добавлено поле
+            user_id=data["user_id"],
+            phone=data["phone"],
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            pin_code=data["pin_code"],
+            balance=data["balance"],
+            telegram_chat_id=data.get("telegram_chat_id"),
         )
         u.created_at = data.get("created_at", "")
         return u
@@ -103,8 +113,9 @@ class User(BaseModel):
 
 
 class Transaction(BaseModel):
-    def __init__(self, sender_phone, sender_name, receiver_phone,
-                 receiver_name, amount, timestamp=None):
+    def __init__(self, sender_phone, sender_name,
+                 receiver_phone, receiver_name,
+                 amount, timestamp=None):
         super().__init__()
         self.sender_phone = sender_phone
         self.sender_name = sender_name
@@ -115,14 +126,18 @@ class Transaction(BaseModel):
             self.created_at = timestamp
 
     def fmt_sender(self):
-        return (f"[{self.created_at}] ОТПРАВЛЕНО\n"
-                f"  -{self.amount:.2f} сомони → "
-                f"{self.receiver_name} ({self.receiver_phone})")
+        return (
+            f"📤 [{self.created_at}] ОТПРАВЛЕНО\n"
+            f"   -{self.amount:.2f} сомони\n"
+            f"   Кому: {self.receiver_name} ({self.receiver_phone})"
+        )
 
     def fmt_receiver(self):
-        return (f"[{self.created_at}] ПОЛУЧЕНО\n"
-                f"  +{self.amount:.2f} сомони ← "
-                f"{self.sender_name} ({self.sender_phone})")
+        return (
+            f"📥 [{self.created_at}] ПОЛУЧЕНО\n"
+            f"   +{self.amount:.2f} сомони\n"
+            f"   От: {self.sender_name} ({self.sender_phone})"
+        )
 
     def to_dict(self):
         return {
@@ -136,7 +151,14 @@ class Transaction(BaseModel):
 
     @classmethod
     def from_dict(cls, data):
-        return cls(**data)
+        return cls(
+            sender_phone=data["sender_phone"],
+            sender_name=data["sender_name"],
+            receiver_phone=data["receiver_phone"],
+            receiver_name=data["receiver_name"],
+            amount=data["amount"],
+            timestamp=data.get("timestamp"),
+        )
 
     def __str__(self):
         return f"Txn({self.sender_phone}→{self.receiver_phone}:{self.amount})"

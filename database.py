@@ -70,6 +70,19 @@ class UserDatabase(BaseStorage):
     def count(self):
         return len(self._read())
 
+    def link_telegram(self, phone, chat_id):
+        """
+        Привязать Telegram chat_id к аккаунту по номеру.
+        Вызывается когда пользователь пишет /start боту.
+        """
+        data = self._read()
+        for uid, ud in data.items():
+            if ud["phone"] == phone:
+                ud["telegram_chat_id"] = chat_id
+                self._write(data)
+                return True
+        return False
+
 
 class HistoryManager(BaseStorage):
     def __init__(self):
@@ -93,4 +106,4 @@ class HistoryManager(BaseStorage):
                 txt = f.read().strip()
                 if txt:
                     return txt
-        return "История пуста."
+        return "📭 История пуста."

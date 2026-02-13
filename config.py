@@ -26,5 +26,3 @@ class Colors:
     NAV_BG = "#070b1e"
     NAV_ACTIVE = "#2979ff"
     NAV_INACTIVE = "#546e7a"
-    SUCCESS = "#00e676"
-    ERROR = "#ff5252"
