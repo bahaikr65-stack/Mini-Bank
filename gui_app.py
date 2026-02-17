@@ -12,71 +12,114 @@ from telegram_bot import TelegramBot
 # ══════════════════════════════
 
 class StyledEntry(tk.Entry):
-    def __init__(self, parent, placeholder="", show_char=None, **kw):
-        self._ph = placeholder
-        self._show = show_char
-        self._is_ph = False
-        d = dict(bg=Colors.INPUT_BG, fg=Colors.TEXT,
-                 insertbackground=Colors.TEXT,
-                 font=("Arial", 13), relief="flat", bd=10,
-                 highlightthickness=2, highlightcolor=Colors.ACCENT,
-                 highlightbackground=Colors.BORDER)
-        d.update(kw)
-        super().__init__(parent, **d)
+    """Поле ввода с подсказкой (placeholder)."""
+
+    def __init__(self, parent, placeholder="", show_char=None, **kwargs):
+        self.placeholder = placeholder
+        self.show_char = show_char
+        self.is_placeholder = False
+
+        # Настройки внешнего вида
+        style = {
+            "bg": Colors.INPUT_BG,
+            "fg": Colors.TEXT,
+            "insertbackground": Colors.TEXT,
+            "font": ("Arial", 13),
+            "relief": "flat",
+            "bd": 10,
+            "highlightthickness": 2,
+            "highlightcolor": Colors.ACCENT,
+            "highlightbackground": Colors.BORDER
+        }
+        style.update(kwargs)
+        super().__init__(parent, **style)
+
+        # Если есть подсказка — показываем её
         if placeholder:
-            self._show_ph()
-            self.bind("<FocusIn>", self._fi)
-            self.bind("<FocusOut>", self._fo)
+            self.show_placeholder()
+            self.bind("<FocusIn>", self.on_focus_in)
+            self.bind("<FocusOut>", self.on_focus_out)
 
-    def _show_ph(self):
-        self._is_ph = True
+    def show_placeholder(self):
+        """Показывает текст-подсказку серым цветом."""
+        self.is_placeholder = True
         self.configure(show="", fg=Colors.TEXT2)
-        self.insert(0, self._ph)
+        self.insert(0, self.placeholder)
 
-    def _fi(self, e=None):
-        if self._is_ph:
+    def on_focus_in(self, event=None):
+        """Когда пользователь кликнул на поле — убираем подсказку."""
+        if self.is_placeholder:
             self.delete(0, tk.END)
             self.configure(fg=Colors.TEXT)
-            if self._show:
-                self.configure(show=self._show)
-            self._is_ph = False
+            if self.show_char:
+                self.configure(show=self.show_char)
+            self.is_placeholder = False
 
-    def _fo(self, e=None):
+    def on_focus_out(self, event=None):
+        """Когда пользователь ушёл из поля — возвращаем подсказку если пусто."""
         if not self.get():
-            self._show_ph()
+            self.show_placeholder()
 
-    def val(self):
-        return "" if self._is_ph else self.get().strip()
+    def get_value(self):
+        """Возвращает текст из поля (пустую строку если там подсказка)."""
+        if self.is_placeholder:
+            return ""
+        return self.get().strip()
 
 
 class StyledButton(tk.Button):
+    """Красивая кнопка с эффектом наведения."""
+
     def __init__(self, parent, text="", command=None,
-                 color=None, hover=None, **kw):
-        c = color or Colors.BTN
-        h = hover or Colors.BTN_HOVER
-        d = dict(bg=c, fg="white", font=("Arial", 13, "bold"),
-                 relief="flat", cursor="hand2", bd=0,
-                 activebackground=h, activeforeground="white", pady=12)
-        d.update(kw)
-        super().__init__(parent, text=text, command=command, **d)
-        self.bind("<Enter>", lambda e: self.configure(bg=h))
-        self.bind("<Leave>", lambda e: self.configure(bg=c))
+                 color=None, hover=None, **kwargs):
+        self.normal_color = color or Colors.BTN
+        self.hover_color = hover or Colors.BTN_HOVER
+
+        style = {
+            "bg": self.normal_color,
+            "fg": "white",
+            "font": ("Arial", 13, "bold"),
+            "relief": "flat",
+            "cursor": "hand2",
+            "bd": 0,
+            "activebackground": self.hover_color,
+            "activeforeground": "white",
+            "pady": 12
+        }
+        style.update(kwargs)
+        super().__init__(parent, text=text, command=command, **style)
+
+        # Эффект наведения мышки
+        self.bind("<Enter>", lambda event: self.configure(bg=self.hover_color))
+        self.bind("<Leave>", lambda event: self.configure(bg=self.normal_color))
 
 
 class NavButton(tk.Button):
-    def __init__(self, parent, text="", command=None, active=False, **kw):
-        bg = Colors.NAV_ACTIVE if active else Colors.NAV_BG
-        fg = Colors.TEXT if active else Colors.NAV_INACTIVE
-        super().__init__(parent, text=text, command=command,
-                         bg=bg, fg=fg, font=("Arial", 11, "bold"),
-                         relief="flat", cursor="hand2", bd=0, pady=14,
-                         activebackground=Colors.NAV_ACTIVE,
-                         activeforeground=Colors.TEXT, **kw)
+    """Кнопка навигации внизу экрана."""
 
-    def set_active(self, a):
-        self.configure(
-            bg=Colors.NAV_ACTIVE if a else Colors.NAV_BG,
-            fg=Colors.TEXT if a else Colors.NAV_INACTIVE)
+    def __init__(self, parent, text="", command=None, active=False, **kwargs):
+        if active:
+            bg_color = Colors.NAV_ACTIVE
+            text_color = Colors.TEXT
+        else:
+            bg_color = Colors.NAV_BG
+            text_color = Colors.NAV_INACTIVE
+
+        super().__init__(
+            parent, text=text, command=command,
+            bg=bg_color, fg=text_color,
+            font=("Arial", 11, "bold"),
+            relief="flat", cursor="hand2", bd=0, pady=14,
+            activebackground=Colors.NAV_ACTIVE,
+            activeforeground=Colors.TEXT, **kwargs
+        )
+
+    def set_active(self, is_active):
+        """Переключает вид кнопки: активная или нет."""
+        if is_active:
+            self.configure(bg=Colors.NAV_ACTIVE, fg=Colors.TEXT)
+        else:
+            self.configure(bg=Colors.NAV_BG, fg=Colors.NAV_INACTIVE)
 
 
 # ══════════════════════════════
@@ -84,61 +127,81 @@ class NavButton(tk.Button):
 # ══════════════════════════════
 
 class BaseScreen(tk.Frame):
+    """Базовый класс для всех экранов приложения."""
+
     def __init__(self, parent, app):
         super().__init__(parent, bg=Colors.BG)
         self.app = app
-        self._build()
+        self.build()
 
-    def _build(self):
+    def build(self):
+        """Переопределяется в дочерних классах."""
         pass
 
-    def _lbl(self, parent, text, size=12, bold=False,
-             color=Colors.TEXT, bg=Colors.BG):
-        w = "bold" if bold else "normal"
+    def make_label(self, parent, text, size=12, bold=False,
+                   color=Colors.TEXT, bg=Colors.BG):
+        """Создаёт текстовую метку."""
+        if bold:
+            weight = "bold"
+        else:
+            weight = "normal"
         return tk.Label(parent, text=text, bg=bg, fg=color,
-                        font=("Arial", size, w))
+                        font=("Arial", size, weight))
 
 
 # ══════════════════════════════
-#  ВХОД
+#  ЭКРАН ВХОДА
 # ══════════════════════════════
 
 class LoginScreen(BaseScreen):
-    def _build(self):
-        self._lbl(self, "🏦", size=40).pack(pady=(50, 0))
-        self._lbl(self, "Мини-Банк", size=24, bold=True).pack()
-        self._lbl(self, "Войдите в аккаунт",
-                  color=Colors.TEXT2).pack(pady=(5, 30))
 
+    def build(self):
+        # Заголовок
+        self.make_label(self, "🏦", size=40).pack(pady=(50, 0))
+        self.make_label(self, "Мини-Банк", size=24, bold=True).pack()
+        self.make_label(self, "Войдите в аккаунт",
+                        color=Colors.TEXT2).pack(pady=(5, 30))
+
+        # Форма входа
         form = tk.Frame(self, bg=Colors.BG)
         form.pack(fill="x", padx=40)
 
-        self._lbl(form, "Телефон", size=11).pack(anchor="w")
-        self.phone = StyledEntry(form, placeholder="+992XXXXXXXXX")
-        self.phone.pack(fill="x", pady=(3, 12))
+        # Поле телефона
+        self.make_label(form, "Телефон", size=11).pack(anchor="w")
+        self.phone_entry = StyledEntry(form, placeholder="+992XXXXXXXXX")
+        self.phone_entry.pack(fill="x", pady=(3, 12))
 
-        self._lbl(form, "PIN-код", size=11).pack(anchor="w")
-        self.pin = StyledEntry(form, placeholder="••••", show_char="•")
-        self.pin.pack(fill="x", pady=(3, 20))
+        # Поле PIN-кода
+        self.make_label(form, "PIN-код", size=11).pack(anchor="w")
+        self.pin_entry = StyledEntry(form, placeholder="••••", show_char="•")
+        self.pin_entry.pack(fill="x", pady=(3, 20))
 
-        StyledButton(form, text="Войти", command=self._login).pack(fill="x")
+        # Кнопка входа
+        StyledButton(form, text="Войти", command=self.on_login).pack(fill="x")
 
+        # Ссылка на регистрацию
         bottom = tk.Frame(self, bg=Colors.BG)
         bottom.pack(pady=15)
-        self._lbl(bottom, "Нет аккаунта?", color=Colors.TEXT2).pack(side="left")
-        tk.Button(bottom, text="Регистрация", bg=Colors.BG, fg=Colors.ACCENT,
-                  font=("Arial", 11, "underline"), relief="flat",
-                  cursor="hand2", bd=0, activebackground=Colors.BG,
-                  command=lambda: self.app.show("register")).pack(
-            side="left", padx=5)
+        self.make_label(bottom, "Нет аккаунта?", color=Colors.TEXT2).pack(side="left")
+        tk.Button(
+            bottom, text="Регистрация", bg=Colors.BG, fg=Colors.ACCENT,
+            font=("Arial", 11, "underline"), relief="flat",
+            cursor="hand2", bd=0, activebackground=Colors.BG,
+            command=lambda: self.app.show("register")
+        ).pack(side="left", padx=5)
 
-    def _login(self):
-        ph = self.phone.val().replace(" ", "").replace("-", "")
-        pin = self.pin.val()
-        if not ph or not pin:
+    def on_login(self):
+        """Обработка нажатия кнопки Войти."""
+        phone = self.phone_entry.get_value().replace(" ", "").replace("-", "")
+        pin = self.pin_entry.get_value()
+
+        # Проверяем что поля заполнены
+        if not phone or not pin:
             messagebox.showerror("Ошибка", "Заполните поля!")
             return
-        user = self.app.db.authenticate(ph, pin)
+
+        # Пробуем войти
+        user = self.app.db.authenticate(phone, pin)
         if user:
             self.app.current_user = user
             self.app.show("dashboard")
@@ -147,80 +210,103 @@ class LoginScreen(BaseScreen):
 
 
 # ══════════════════════════════
-#  РЕГИСТРАЦИЯ
+#  ЭКРАН РЕГИСТРАЦИИ
 # ══════════════════════════════
 
 class RegisterScreen(BaseScreen):
-    def _build(self):
-        self._lbl(self, "🏦", size=36).pack(pady=(30, 0))
-        self._lbl(self, "Регистрация", size=20, bold=True).pack(pady=(5, 15))
 
+    def build(self):
+        # Заголовок
+        self.make_label(self, "🏦", size=36).pack(pady=(30, 0))
+        self.make_label(self, "Регистрация", size=20, bold=True).pack(pady=(5, 15))
+
+        # Форма регистрации
         form = tk.Frame(self, bg=Colors.BG)
         form.pack(fill="x", padx=40)
 
-        for lbl, ph, show in [
-            ("Имя", "Ваше имя", None),
-            ("Фамилия", "Фамилия", None),
-            ("Телефон", "+992XXXXXXXXX", None),
-            (f"PIN ({Config.PIN_LENGTH} цифры)", "••••", "•"),
-        ]:
-            self._lbl(form, lbl, size=11).pack(anchor="w")
-            e = StyledEntry(form, placeholder=ph, show_char=show)
-            e.pack(fill="x", pady=(3, 8))
-            setattr(self, f"_{lbl[:3].lower()}", e)
+        # Поле имени
+        self.make_label(form, "Имя", size=11).pack(anchor="w")
+        self.name_entry = StyledEntry(form, placeholder="Ваше имя")
+        self.name_entry.pack(fill="x", pady=(3, 8))
 
-        StyledButton(form, text="Зарегистрироваться",
-                     command=self._register,
-                     color=Colors.BTN_GREEN,
-                     hover=Colors.BTN_GREEN_H).pack(fill="x", pady=(10, 0))
+        # Поле фамилии
+        self.make_label(form, "Фамилия", size=11).pack(anchor="w")
+        self.surname_entry = StyledEntry(form, placeholder="Фамилия")
+        self.surname_entry.pack(fill="x", pady=(3, 8))
 
+        # Поле телефона
+        self.make_label(form, "Телефон", size=11).pack(anchor="w")
+        self.phone_entry = StyledEntry(form, placeholder="+992XXXXXXXXX")
+        self.phone_entry.pack(fill="x", pady=(3, 8))
+
+        # Поле PIN-кода
+        self.make_label(form, f"PIN ({Config.PIN_LENGTH} цифры)", size=11).pack(anchor="w")
+        self.pin_entry = StyledEntry(form, placeholder="••••", show_char="•")
+        self.pin_entry.pack(fill="x", pady=(3, 8))
+
+        # Кнопка регистрации
+        StyledButton(
+            form, text="Зарегистрироваться",
+            command=self.on_register,
+            color=Colors.BTN_GREEN,
+            hover=Colors.BTN_GREEN_H
+        ).pack(fill="x", pady=(10, 0))
+
+        # Ссылка на вход
         bottom = tk.Frame(self, bg=Colors.BG)
         bottom.pack(pady=12)
-        self._lbl(bottom, "Есть аккаунт?", color=Colors.TEXT2).pack(side="left")
-        tk.Button(bottom, text="Войти", bg=Colors.BG, fg=Colors.ACCENT,
-                  font=("Arial", 11, "underline"), relief="flat",
-                  cursor="hand2", bd=0, activebackground=Colors.BG,
-                  command=lambda: self.app.show("login")).pack(
-            side="left", padx=5)
+        self.make_label(bottom, "Есть аккаунт?", color=Colors.TEXT2).pack(side="left")
+        tk.Button(
+            bottom, text="Войти", bg=Colors.BG, fg=Colors.ACCENT,
+            font=("Arial", 11, "underline"), relief="flat",
+            cursor="hand2", bd=0, activebackground=Colors.BG,
+            command=lambda: self.app.show("login")
+        ).pack(side="left", padx=5)
 
-    def _register(self):
-        f = self._имя.val()
-        l = self._фам.val()
-        ph = self._тел.val().replace(" ", "").replace("-", "")
-        pin = self._pin.val()
+    def on_register(self):
+        """Обработка нажатия кнопки Зарегистрироваться."""
+        first_name = self.name_entry.get_value()
+        last_name = self.surname_entry.get_value()
+        phone = self.phone_entry.get_value().replace(" ", "").replace("-", "")
+        pin = self.pin_entry.get_value()
 
-        if not all([f, l, ph, pin]):
+        # Проверки
+        if not first_name or not last_name or not phone or not pin:
             messagebox.showerror("Ошибка", "Заполните все поля!")
             return
-        if len(f) < 2 or len(l) < 2:
+
+        if len(first_name) < 2 or len(last_name) < 2:
             messagebox.showerror("Ошибка", "Имя/фамилия: мин. 2 символа!")
             return
-        if not (ph.startswith("+") and len(ph) >= 10 and ph[1:].isdigit()):
+
+        if not (phone.startswith("+") and len(phone) >= 10 and phone[1:].isdigit()):
             messagebox.showerror("Ошибка", "Формат: +992XXXXXXXXX")
             return
+
         if not (pin.isdigit() and len(pin) == Config.PIN_LENGTH):
-            messagebox.showerror("Ошибка",
-                                 f"PIN = {Config.PIN_LENGTH} цифры!")
+            messagebox.showerror("Ошибка", f"PIN = {Config.PIN_LENGTH} цифры!")
             return
-        if self.app.db.phone_exists(ph):
+
+        if self.app.db.phone_exists(phone):
             messagebox.showerror("Ошибка", "Номер уже занят!")
             return
 
-        uid = self.app.db.gen_id()
-        # GUI-регистрация: telegram_chat_id = None
-        # Можно привязать позже через /start в боте
-        user = User(uid, ph, f, l, pin, Config.INITIAL_BALANCE,
-                    telegram_chat_id=None)
+        # Создаём пользователя
+        user_id = self.app.db.gen_id()
+        user = User(user_id, phone, first_name, last_name, pin,
+                    Config.INITIAL_BALANCE, telegram_chat_id=None)
         self.app.db.save(user)
         self.app.log(f"🆕 Регистрация (GUI): {user.full_name()}")
 
+        # Показываем сообщение об успехе
         messagebox.showinfo("Успех",
             f"✅ Регистрация завершена!\n\n"
-            f"{user.full_name()}\n{ph}\n"
+            f"{user.full_name()}\n{phone}\n"
             f"Баланс: {user.balance:,.2f} {Config.CURRENCY}\n\n"
             f"💡 Чтобы получать уведомления в Telegram,\n"
             f"напишите /start боту и привяжите аккаунт.")
 
+        # Переходим на главный экран
         self.app.current_user = user
         self.app.show("dashboard")
 
@@ -230,138 +316,160 @@ class RegisterScreen(BaseScreen):
 # ══════════════════════════════
 
 class WalletContent(BaseScreen):
-    def _build(self):
-        u = self.app.current_user
-        self._lbl(self, "💰 Кошелёк", size=18, bold=True).pack(pady=(25, 15))
 
+    def build(self):
+        user = self.app.current_user
+
+        self.make_label(self, "💰 Кошелёк", size=18, bold=True).pack(pady=(25, 15))
+
+        # Карточка с балансом
         card = tk.Frame(self, bg=Colors.CARD, padx=25, pady=20)
         card.pack(fill="x", padx=25, pady=10)
 
-        self._lbl(card, "Ваш баланс", size=12,
-                  color=Colors.TEXT2, bg=Colors.CARD).pack(anchor="w")
-        self._lbl(card, f"{u.balance:,.2f}", size=36,
-                  bold=True, color=Colors.ACCENT, bg=Colors.CARD).pack(anchor="w")
-        self._lbl(card, Config.CURRENCY, size=14,
-                  color=Colors.TEXT2, bg=Colors.CARD).pack(anchor="w")
+        self.make_label(card, "Ваш баланс", size=12,
+                        color=Colors.TEXT2, bg=Colors.CARD).pack(anchor="w")
+        self.make_label(card, f"{user.balance:,.2f}", size=36,
+                        bold=True, color=Colors.ACCENT, bg=Colors.CARD).pack(anchor="w")
+        self.make_label(card, Config.CURRENCY, size=14,
+                        color=Colors.TEXT2, bg=Colors.CARD).pack(anchor="w")
 
+        # Разделитель
         tk.Frame(self, bg=Colors.BORDER, height=1).pack(
             fill="x", padx=25, pady=20)
 
-        StyledButton(self, text="💸  Перевести деньги",
-                     command=lambda: self.app.dashboard.show_tab("transfer"),
-                     color=Colors.BTN_GREEN,
-                     hover=Colors.BTN_GREEN_H).pack(fill="x", padx=25)
+        # Кнопка перевода
+        StyledButton(
+            self, text="💸  Перевести деньги",
+            command=lambda: self.app.dashboard.show_tab("transfer"),
+            color=Colors.BTN_GREEN,
+            hover=Colors.BTN_GREEN_H
+        ).pack(fill="x", padx=25)
 
 
 # ══════════════════════════════
-#  ПЕРЕВОД + УВЕДОМЛЕНИЕ
+#  ПЕРЕВОД
 # ══════════════════════════════
 
 class TransferContent(BaseScreen):
-    def _build(self):
-        u = self.app.current_user
-        self._lbl(self, "💸 Перевод", size=18, bold=True).pack(pady=(20, 10))
-        self._lbl(self, f"Доступно: {u.balance:,.2f} {Config.CURRENCY}",
-                  color=Colors.TEXT2).pack(pady=(0, 15))
 
+    def build(self):
+        user = self.app.current_user
+
+        self.make_label(self, "💸 Перевод", size=18, bold=True).pack(pady=(20, 10))
+        self.make_label(self, f"Доступно: {user.balance:,.2f} {Config.CURRENCY}",
+                        color=Colors.TEXT2).pack(pady=(0, 15))
+
+        # Форма перевода
         form = tk.Frame(self, bg=Colors.BG)
         form.pack(fill="x", padx=30)
 
-        self._lbl(form, "Номер получателя", size=11).pack(anchor="w")
-        self.phone = StyledEntry(form, placeholder="+992XXXXXXXXX")
-        self.phone.pack(fill="x", pady=(3, 10))
+        # Номер получателя
+        self.make_label(form, "Номер получателя", size=11).pack(anchor="w")
+        self.phone_entry = StyledEntry(form, placeholder="+992XXXXXXXXX")
+        self.phone_entry.pack(fill="x", pady=(3, 10))
 
-        self._lbl(form, "Сумма", size=11).pack(anchor="w")
-        self.amount = StyledEntry(form, placeholder="0.00")
-        self.amount.pack(fill="x", pady=(3, 20))
+        # Сумма перевода
+        self.make_label(form, "Сумма", size=11).pack(anchor="w")
+        self.amount_entry = StyledEntry(form, placeholder="0.00")
+        self.amount_entry.pack(fill="x", pady=(3, 20))
 
-        StyledButton(form, text="💸 Отправить",
-                     command=self._send,
-                     color=Colors.BTN_GREEN,
-                     hover=Colors.BTN_GREEN_H).pack(fill="x", pady=(0, 8))
+        # Кнопка отправки
+        StyledButton(
+            form, text="💸 Отправить",
+            command=self.on_send,
+            color=Colors.BTN_GREEN,
+            hover=Colors.BTN_GREEN_H
+        ).pack(fill="x", pady=(0, 8))
 
-        StyledButton(form, text="← Назад",
-                     command=lambda: self.app.dashboard.show_tab("wallet"),
-                     color=Colors.BTN_GRAY,
-                     hover="#37474f").pack(fill="x")
+        # Кнопка назад
+        StyledButton(
+            form, text="← Назад",
+            command=lambda: self.app.dashboard.show_tab("wallet"),
+            color=Colors.BTN_GRAY,
+            hover="#37474f"
+        ).pack(fill="x")
 
-    def _send(self):
-        ph = self.phone.val().replace(" ", "").replace("-", "")
-        amt_t = self.amount.val().replace(",", ".")
+    def on_send(self):
+        """Обработка нажатия кнопки Отправить."""
+        phone = self.phone_entry.get_value().replace(" ", "").replace("-", "")
+        amount_text = self.amount_entry.get_value().replace(",", ".")
 
-        if not ph or not amt_t:
+        # Проверяем что поля заполнены
+        if not phone or not amount_text:
             messagebox.showerror("Ошибка", "Заполните все поля!")
             return
 
+        # Проверяем что сумма корректная
         try:
-            amt = round(float(amt_t), 2)
-            assert amt > 0
+            amount = round(float(amount_text), 2)
+            assert amount > 0
         except:
             messagebox.showerror("Ошибка", "Некорректная сумма!")
             return
 
         sender = self.app.current_user
 
-        if sender.phone == ph:
+        # Нельзя переводить самому себе
+        if sender.phone == phone:
             messagebox.showerror("Ошибка", "Нельзя себе!")
             return
 
-        rcv = self.app.db.get_by_phone(ph)
-        if not rcv:
-            messagebox.showerror("Ошибка",
-                "Нет пользователя с таким номером!")
+        # Ищем получателя в базе
+        receiver = self.app.db.get_by_phone(phone)
+        if not receiver:
+            messagebox.showerror("Ошибка", "Нет пользователя с таким номером!")
             return
 
-        if not sender.has_funds(amt):
+        # Проверяем достаточно ли денег
+        if not sender.has_funds(amount):
             messagebox.showerror("Ошибка",
                 f"Недостаточно средств!\n"
                 f"Баланс: {sender.balance:,.2f}")
             return
 
-        ok = messagebox.askyesno("Подтверждение",
-            f"Перевести {amt:,.2f} {Config.CURRENCY}\n"
-            f"→ {rcv.full_name()} ({rcv.phone})?")
-        if not ok:
+        # Спрашиваем подтверждение
+        confirm = messagebox.askyesno("Подтверждение",
+            f"Перевести {amount:,.2f} {Config.CURRENCY}\n"
+            f"→ {receiver.full_name()} ({receiver.phone})?")
+        if not confirm:
             return
 
         # ── Выполняем перевод ──
-        sender.debit(amt)
-        rcv.credit(amt)
+        sender.debit(amount)
+        receiver.credit(amount)
         self.app.db.save(sender)
-        self.app.db.save(rcv)
+        self.app.db.save(receiver)
 
-        txn = Transaction(sender.phone, sender.full_name(),
-                          rcv.phone, rcv.full_name(), amt)
-        self.app.history.add(sender.user_id, txn.fmt_sender())
-        self.app.history.add(rcv.user_id, txn.fmt_receiver())
+        # Записываем в историю
+        transaction = Transaction(sender.phone, sender.full_name(),
+                                  receiver.phone, receiver.full_name(), amount)
+        self.app.history.add(sender.user_id, transaction.fmt_sender())
+        self.app.history.add(receiver.user_id, transaction.fmt_receiver())
 
         self.app.current_user = sender
 
-        # ═══════════════════════════════════════════
-        #  ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ ПОЛУЧАТЕЛЮ В TELEGRAM!
-        # ═══════════════════════════════════════════
-
+        # ── Отправляем уведомление в Telegram ──
         notified = False
         if self.app.tg_bot:
             notified = self.app.tg_bot.notify_user(
-                rcv, sender.full_name(), amt
+                receiver, sender.full_name(), amount
             )
 
-        # Сообщение отправителю
         if notified:
             notify_text = "📨 Получатель уведомлён в Telegram!"
         else:
             notify_text = "⚠️ У получателя нет привязки к Telegram."
 
         self.app.log(
-            f"💸 {sender.full_name()} → {rcv.full_name()}: "
-            f"{amt} {Config.CURRENCY}"
+            f"💸 {sender.full_name()} → {receiver.full_name()}: "
+            f"{amount} {Config.CURRENCY}"
         )
 
+        # Показываем результат
         messagebox.showinfo("Успех",
             f"✅ Переведено!\n\n"
-            f"👤 {rcv.full_name()}\n"
-            f"💰 {amt:,.2f} {Config.CURRENCY}\n"
+            f"👤 {receiver.full_name()}\n"
+            f"💰 {amount:,.2f} {Config.CURRENCY}\n"
             f"💵 Остаток: {sender.balance:,.2f} {Config.CURRENCY}\n\n"
             f"{notify_text}")
 
@@ -373,27 +481,33 @@ class TransferContent(BaseScreen):
 # ══════════════════════════════
 
 class HistoryContent(BaseScreen):
-    def _build(self):
-        u = self.app.current_user
-        self._lbl(self, "📋 История", size=18, bold=True).pack(pady=(20, 10))
 
+    def build(self):
+        user = self.app.current_user
+
+        self.make_label(self, "📋 История", size=18, bold=True).pack(pady=(20, 10))
+
+        # Контейнер для текста с прокруткой
         container = tk.Frame(self, bg=Colors.BG)
         container.pack(fill="both", expand=True, padx=20, pady=(0, 10))
 
-        scroll = tk.Scrollbar(container)
-        scroll.pack(side="right", fill="y")
+        scrollbar = tk.Scrollbar(container)
+        scrollbar.pack(side="right", fill="y")
 
-        self.text = tk.Text(container, bg=Colors.CARD, fg=Colors.TEXT,
-                            font=("Consolas", 11), relief="flat",
-                            wrap="word", bd=10, state="disabled",
-                            yscrollcommand=scroll.set)
-        self.text.pack(fill="both", expand=True)
-        scroll.config(command=self.text.yview)
+        text_widget = tk.Text(
+            container, bg=Colors.CARD, fg=Colors.TEXT,
+            font=("Consolas", 11), relief="flat",
+            wrap="word", bd=10, state="disabled",
+            yscrollcommand=scrollbar.set
+        )
+        text_widget.pack(fill="both", expand=True)
+        scrollbar.config(command=text_widget.yview)
 
-        txt = self.app.history.get_all(u.user_id)
-        self.text.configure(state="normal")
-        self.text.insert("1.0", txt)
-        self.text.configure(state="disabled")
+        # Загружаем историю из базы
+        history_text = self.app.history.get_all(user.user_id)
+        text_widget.configure(state="normal")
+        text_widget.insert("1.0", history_text)
+        text_widget.configure(state="disabled")
 
 
 # ══════════════════════════════
@@ -401,59 +515,73 @@ class HistoryContent(BaseScreen):
 # ══════════════════════════════
 
 class ProfileContent(BaseScreen):
-    def _build(self):
-        u = self.app.current_user
-        self._lbl(self, "👤 Профиль", size=18, bold=True).pack(pady=(20, 15))
 
-        initials = f"{u.first_name[0]}{u.last_name[0]}".upper()
-        av = tk.Frame(self, bg=Colors.ACCENT, width=80, height=80)
-        av.pack(pady=(5, 5))
-        av.pack_propagate(False)
-        self._lbl(av, initials, size=28, bold=True,
-                  color="#1a237e", bg=Colors.ACCENT).place(
+    def build(self):
+        user = self.app.current_user
+
+        self.make_label(self, "👤 Профиль", size=18, bold=True).pack(pady=(20, 15))
+
+        # Аватар с инициалами
+        initials = (user.first_name[0] + user.last_name[0]).upper()
+        avatar_frame = tk.Frame(self, bg=Colors.ACCENT, width=80, height=80)
+        avatar_frame.pack(pady=(5, 5))
+        avatar_frame.pack_propagate(False)
+        self.make_label(avatar_frame, initials, size=28, bold=True,
+                        color="#1a237e", bg=Colors.ACCENT).place(
             relx=0.5, rely=0.5, anchor="center")
 
-        self._lbl(self, u.full_name(), size=18, bold=True).pack(pady=(10, 3))
-        self._lbl(self, u.phone, color=Colors.TEXT2).pack()
+        # Имя и телефон
+        self.make_label(self, user.full_name(), size=18, bold=True).pack(pady=(10, 3))
+        self.make_label(self, user.phone, color=Colors.TEXT2).pack()
 
-        # Статус Telegram
-        tg_status = ("✅ Telegram привязан"
-                     if u.telegram_chat_id
-                     else "❌ Telegram не привязан\n"
-                          "(напишите /start боту)")
-        self._lbl(self, tg_status, size=10,
-                  color=Colors.ACCENT if u.telegram_chat_id
-                  else Colors.TEXT2).pack(pady=(5, 15))
+        # Статус привязки Telegram
+        if user.telegram_chat_id:
+            telegram_status = "✅ Telegram привязан"
+            status_color = Colors.ACCENT
+        else:
+            telegram_status = "❌ Telegram не привязан\n(напишите /start боту)"
+            status_color = Colors.TEXT2
 
+        self.make_label(self, telegram_status, size=10,
+                        color=status_color).pack(pady=(5, 15))
+
+        # Разделитель
         tk.Frame(self, bg=Colors.BORDER, height=1).pack(
             fill="x", padx=30, pady=5)
 
-        info = tk.Frame(self, bg=Colors.BG)
-        info.pack(fill="x", padx=35, pady=10)
+        # Информация о пользователе
+        info_frame = tk.Frame(self, bg=Colors.BG)
+        info_frame.pack(fill="x", padx=35, pady=10)
 
         fields = [
-            ("🆔  ID", str(u.user_id)),
-            ("👤  Имя", u.first_name),
-            ("👤  Фамилия", u.last_name),
-            ("📱  Телефон", u.phone),
-            ("💰  Баланс", f"{u.balance:,.2f} {Config.CURRENCY}"),
-            ("📅  Дата", u.created_at),
+            ("🆔  ID", str(user.user_id)),
+            ("👤  Имя", user.first_name),
+            ("👤  Фамилия", user.last_name),
+            ("📱  Телефон", user.phone),
+            ("💰  Баланс", f"{user.balance:,.2f} {Config.CURRENCY}"),
+            ("📅  Дата", user.created_at),
         ]
-        for lbl, val in fields:
-            row = tk.Frame(info, bg=Colors.BG)
-            row.pack(fill="x", pady=4)
-            self._lbl(row, lbl, size=11, color=Colors.TEXT2).pack(side="left")
-            self._lbl(row, val, size=12).pack(side="right")
 
+        for label_text, value_text in fields:
+            row = tk.Frame(info_frame, bg=Colors.BG)
+            row.pack(fill="x", pady=4)
+            self.make_label(row, label_text, size=11, color=Colors.TEXT2).pack(side="left")
+            self.make_label(row, value_text, size=12).pack(side="right")
+
+        # Разделитель
         tk.Frame(self, bg=Colors.BORDER, height=1).pack(
             fill="x", padx=30, pady=15)
 
-        StyledButton(self, text="🚪 Выйти",
-                     command=self._logout,
-                     color=Colors.BTN_RED,
-                     hover=Colors.BTN_RED_H).pack(padx=60, fill="x")
+        # Кнопка выхода
+        StyledButton(
+            self, text="🚪 Выйти",
+            command=self.on_logout,
+            color=Colors.BTN_RED,
+            hover=Colors.BTN_RED_H
+        ).pack(padx=60, fill="x")
 
-    def _logout(self):
+    def on_logout(self):
+        """Выход из аккаунта."""
         self.app.current_user = None
         self.app.show("login")
 
@@ -463,52 +591,75 @@ class ProfileContent(BaseScreen):
 # ══════════════════════════════
 
 class DashboardScreen(BaseScreen):
+
     def __init__(self, parent, app):
-        self._nav = {}
-        self._cur = "wallet"
+        self.nav_buttons = {}
+        self.current_tab = "wallet"
         super().__init__(parent, app)
 
-    def _build(self):
-        self._content = tk.Frame(self, bg=Colors.BG)
-        self._content.pack(fill="both", expand=True)
+    def build(self):
+        # Область для содержимого вкладок
+        self.content_frame = tk.Frame(self, bg=Colors.BG)
+        self.content_frame.pack(fill="both", expand=True)
 
-        # ═══ 3 КНОПКИ ВНИЗУ ═══
-        nav = tk.Frame(self, bg=Colors.NAV_BG, height=55)
-        nav.pack(fill="x", side="bottom")
-        nav.pack_propagate(False)
+        # ═══ 3 КНОПКИ НАВИГАЦИИ ВНИЗУ ═══
+        nav_bar = tk.Frame(self, bg=Colors.NAV_BG, height=55)
+        nav_bar.pack(fill="x", side="bottom")
+        nav_bar.pack_propagate(False)
 
-        for key, text in [("wallet", "💰 Кошелёк"),
-                          ("history", "📋 История"),
-                          ("profile", "👤 Профиль")]:
-            btn = NavButton(nav, text=text,
-                            command=lambda k=key: self.show_tab(k),
-                            active=(key == "wallet"))
-            btn.pack(side="left", fill="both", expand=True)
-            self._nav[key] = btn
+        tabs = [
+            ("wallet", "💰 Кошелёк"),
+            ("history", "📋 История"),
+            ("profile", "👤 Профиль"),
+        ]
 
+        for tab_key, tab_text in tabs:
+            is_active = (tab_key == "wallet")
+            button = NavButton(
+                nav_bar, text=tab_text,
+                command=lambda key=tab_key: self.show_tab(key),
+                active=is_active
+            )
+            button.pack(side="left", fill="both", expand=True)
+            self.nav_buttons[tab_key] = button
+
+        # Показываем кошелёк по умолчанию
         self.show_tab("wallet")
 
-    def show_tab(self, name):
+    def show_tab(self, tab_name):
+        """Переключает вкладку на dashboard."""
+
+        # Обновляем данные пользователя из базы
         if self.app.current_user:
-            fresh = self.app.db.get(self.app.current_user.user_id)
-            if fresh:
-                self.app.current_user = fresh
+            fresh_user = self.app.db.get(self.app.current_user.user_id)
+            if fresh_user:
+                self.app.current_user = fresh_user
 
-        self._cur = name
-        for k, b in self._nav.items():
-            b.set_active(k == name)
+        self.current_tab = tab_name
 
-        for w in self._content.winfo_children():
-            w.destroy()
+        # Обновляем вид кнопок навигации
+        for key, button in self.nav_buttons.items():
+            button.set_active(key == tab_name)
 
-        tabs = {
-            "wallet": WalletContent,
-            "transfer": TransferContent,
-            "history": HistoryContent,
-            "profile": ProfileContent,
-        }
-        cls = tabs.get(name, WalletContent)
-        cls(self._content, self.app).pack(fill="both", expand=True)
+        # Очищаем содержимое
+        for widget in self.content_frame.winfo_children():
+            widget.destroy()
+
+        # Выбираем какую вкладку показать
+        if tab_name == "wallet":
+            tab_class = WalletContent
+        elif tab_name == "transfer":
+            tab_class = TransferContent
+        elif tab_name == "history":
+            tab_class = HistoryContent
+        elif tab_name == "profile":
+            tab_class = ProfileContent
+        else:
+            tab_class = WalletContent
+
+        # Создаём и показываем вкладку
+        tab = tab_class(self.content_frame, self.app)
+        tab.pack(fill="both", expand=True)
 
 
 # ══════════════════════════════════════════
@@ -516,71 +667,90 @@ class DashboardScreen(BaseScreen):
 # ══════════════════════════════════════════
 
 class BankApp(tk.Tk):
+
     def __init__(self):
         super().__init__()
         self.title("🏦 Мини-Банк")
-        self.geometry("420x700")
+        self.geometry("420x600")
         self.resizable(False, False)
         self.configure(bg=Colors.BG)
-        self._center()
+        self.center_window()
 
+        # Инициализация базы данных и переменных
         self.db = UserDatabase()
         self.history = HistoryManager()
         self.current_user = None
         self.dashboard = None
         self.tg_bot = None
 
-        self._container = tk.Frame(self, bg=Colors.BG)
-        self._container.pack(fill="both", expand=True)
+        # Контейнер для экранов
+        self.main_container = tk.Frame(self, bg=Colors.BG)
+        self.main_container.pack(fill="both", expand=True)
 
-        self._status = tk.Label(
+        # Статус-бар внизу окна
+        self.status_label = tk.Label(
             self, text="🤖 Telegram: запуск...",
             bg="#070b1e", fg=Colors.TEXT2,
-            font=("Arial", 9), anchor="w", padx=10)
-        self._status.pack(fill="x", side="bottom")
+            font=("Arial", 9), anchor="w", padx=10
+        )
+        self.status_label.pack(fill="x", side="bottom")
 
+        # Показываем экран входа
         self.show("login")
-        self._start_telegram()
 
-    def _center(self):
+        # Запускаем Telegram-бота
+        self.start_telegram_bot()
+
+    def center_window(self):
+        """Центрирует окно на экране."""
         self.update_idletasks()
         x = (self.winfo_screenwidth() - 420) // 2
         y = (self.winfo_screenheight() - 700) // 2
         self.geometry(f"+{x}+{y}")
 
-    def show(self, name):
-        for w in self._container.winfo_children():
-            w.destroy()
+    def show(self, screen_name):
+        """Переключает экран приложения."""
+        # Удаляем всё из контейнера
+        for widget in self.main_container.winfo_children():
+            widget.destroy()
 
-        screens = {
-            "login": LoginScreen,
-            "register": RegisterScreen,
-            "dashboard": DashboardScreen,
-        }
-        cls = screens.get(name)
-        if cls:
-            scr = cls(self._container, self)
-            scr.pack(fill="both", expand=True)
-            if name == "dashboard":
-                self.dashboard = scr
+        # Выбираем нужный экран
+        if screen_name == "login":
+            screen_class = LoginScreen
+        elif screen_name == "register":
+            screen_class = RegisterScreen
+        elif screen_name == "dashboard":
+            screen_class = DashboardScreen
+        else:
+            return
 
-    def log(self, msg):
+        # Создаём и показываем экран
+        screen = screen_class(self.main_container, self)
+        screen.pack(fill="both", expand=True)
+
+        # Сохраняем ссылку на dashboard
+        if screen_name == "dashboard":
+            self.dashboard = screen
+
+    def log(self, message):
+        """Выводит сообщение в консоль и статус-бар."""
         from datetime import datetime
-        ts = datetime.now().strftime("%H:%M:%S")
-        print(f"[{ts}] {msg}")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {message}")
         try:
-            self._status.configure(text=f"🤖 {msg}")
+            self.status_label.configure(text=f"🤖 {message}")
         except:
             pass
 
-    def _start_telegram(self):
+    def start_telegram_bot(self):
+        """Запускает Telegram-бота в отдельном потоке."""
         try:
             self.tg_bot = TelegramBot(
                 self.db, self.history,
-                log_cb=lambda m: self.after(0, lambda: self.log(m))
+                log_cb=lambda message: self.after(0, lambda: self.log(message))
             )
-            t = threading.Thread(target=self.tg_bot.run, daemon=True)
-            t.start()
+            bot_thread = threading.Thread(target=self.tg_bot.run, daemon=True)
+            bot_thread.start()
             self.log("Telegram-бот подключён ✅")
-        except Exception as e:
-            self.log(f"Ошибка Telegram: {e}")
+        except Exception as error:
+            self.log(f"Ошибка Telegram: {error}")
