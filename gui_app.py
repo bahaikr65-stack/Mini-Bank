@@ -7,12 +7,11 @@ from database import UserDatabase, HistoryManager
 from telegram_bot import TelegramBot
 
 
-# ══════════════════════════════
-#  ВИДЖЕТЫ
-# ══════════════════════════════
+
+#виджеты
 
 class StyledEntry(tk.Entry):
-    """Поле ввода с подсказкой (placeholder)."""
+    # Поле ввода с подсказкой (placeholder).
 
     def __init__(self, parent, placeholder="", show_char=None, **kwargs):
         self.placeholder = placeholder
@@ -41,13 +40,13 @@ class StyledEntry(tk.Entry):
             self.bind("<FocusOut>", self.on_focus_out)
 
     def show_placeholder(self):
-        """Показывает текст-подсказку серым цветом."""
+        # Показывает текст-подсказку серым цветом.
         self.is_placeholder = True
         self.configure(show="", fg=Colors.TEXT2)
         self.insert(0, self.placeholder)
 
     def on_focus_in(self, event=None):
-        """Когда пользователь кликнул на поле — убираем подсказку."""
+        #Когда пользователь кликнул на поле — убираем подсказку.
         if self.is_placeholder:
             self.delete(0, tk.END)
             self.configure(fg=Colors.TEXT)
@@ -56,19 +55,19 @@ class StyledEntry(tk.Entry):
             self.is_placeholder = False
 
     def on_focus_out(self, event=None):
-        """Когда пользователь ушёл из поля — возвращаем подсказку если пусто."""
+        # Когда пользователь ушёл из поля — возвращаем подсказку если пусто.
         if not self.get():
             self.show_placeholder()
 
     def get_value(self):
-        """Возвращает текст из поля (пустую строку если там подсказка)."""
+        #Возвращает текст из поля (пустую строку если там подсказка)
         if self.is_placeholder:
             return ""
         return self.get().strip()
 
 
 class StyledButton(tk.Button):
-    """Красивая кнопка с эффектом наведения."""
+    #Красивая кнопка с эффектом наведения.
 
     def __init__(self, parent, text="", command=None,
                  color=None, hover=None, **kwargs):
@@ -95,7 +94,8 @@ class StyledButton(tk.Button):
 
 
 class NavButton(tk.Button):
-    """Кнопка навигации внизу экрана."""
+    
+    #Кнопка навигации внизу экрана.
 
     def __init__(self, parent, text="", command=None, active=False, **kwargs):
         if active:
@@ -115,19 +115,19 @@ class NavButton(tk.Button):
         )
 
     def set_active(self, is_active):
-        """Переключает вид кнопки: активная или нет."""
+        #Переключает вид кнопки: активная или нет.
         if is_active:
             self.configure(bg=Colors.NAV_ACTIVE, fg=Colors.TEXT)
         else:
             self.configure(bg=Colors.NAV_BG, fg=Colors.NAV_INACTIVE)
 
 
-# ══════════════════════════════
+
 #  БАЗОВЫЙ ЭКРАН
-# ══════════════════════════════
+
 
 class BaseScreen(tk.Frame):
-    """Базовый класс для всех экранов приложения."""
+    #Базовый класс для всех экранов приложения.
 
     def __init__(self, parent, app):
         super().__init__(parent, bg=Colors.BG)
@@ -135,12 +135,12 @@ class BaseScreen(tk.Frame):
         self.build()
 
     def build(self):
-        """Переопределяется в дочерних классах."""
+        #Переопределяется в дочерних классах.
         pass
 
     def make_label(self, parent, text, size=12, bold=False,
                    color=Colors.TEXT, bg=Colors.BG):
-        """Создаёт текстовую метку."""
+        #Создаёт текстовую метку.
         if bold:
             weight = "bold"
         else:
@@ -149,9 +149,9 @@ class BaseScreen(tk.Frame):
                         font=("Arial", size, weight))
 
 
-# ══════════════════════════════
+
 #  ЭКРАН ВХОДА
-# ══════════════════════════════
+
 
 class LoginScreen(BaseScreen):
 
@@ -168,7 +168,7 @@ class LoginScreen(BaseScreen):
 
         # Поле телефона
         self.make_label(form, "Телефон", size=11).pack(anchor="w")
-        self.phone_entry = StyledEntry(form, placeholder="+992XXXXXXXXX")
+        self.phone_entry = StyledEntry(form, placeholder="+992 введи номер человек")
         self.phone_entry.pack(fill="x", pady=(3, 12))
 
         # Поле PIN-кода
@@ -191,7 +191,7 @@ class LoginScreen(BaseScreen):
         ).pack(side="left", padx=5)
 
     def on_login(self):
-        """Обработка нажатия кнопки Войти."""
+        #Обработка нажатия кнопки Войти
         phone = self.phone_entry.get_value().replace(" ", "").replace("-", "")
         pin = self.pin_entry.get_value()
 
@@ -209,9 +209,9 @@ class LoginScreen(BaseScreen):
             messagebox.showerror("Ошибка", "Неверный номер или PIN!")
 
 
-# ══════════════════════════════
+
 #  ЭКРАН РЕГИСТРАЦИИ
-# ══════════════════════════════
+
 
 class RegisterScreen(BaseScreen):
 
@@ -264,7 +264,7 @@ class RegisterScreen(BaseScreen):
         ).pack(side="left", padx=5)
 
     def on_register(self):
-        """Обработка нажатия кнопки Зарегистрироваться."""
+        #Обработка нажатия кнопки Зарегистрироваться
         first_name = self.name_entry.get_value()
         last_name = self.surname_entry.get_value()
         phone = self.phone_entry.get_value().replace(" ", "").replace("-", "")
@@ -311,9 +311,9 @@ class RegisterScreen(BaseScreen):
         self.app.show("dashboard")
 
 
-# ══════════════════════════════
+
 #  КОШЕЛЁК
-# ══════════════════════════════
+
 
 class WalletContent(BaseScreen):
 
@@ -346,9 +346,9 @@ class WalletContent(BaseScreen):
         ).pack(fill="x", padx=25)
 
 
-# ══════════════════════════════
+
 #  ПЕРЕВОД
-# ══════════════════════════════
+
 
 class TransferContent(BaseScreen):
 
@@ -390,7 +390,7 @@ class TransferContent(BaseScreen):
         ).pack(fill="x")
 
     def on_send(self):
-        """Обработка нажатия кнопки Отправить."""
+        #Обработка нажатия кнопки Отправить
         phone = self.phone_entry.get_value().replace(" ", "").replace("-", "")
         amount_text = self.amount_entry.get_value().replace(",", ".")
 
@@ -476,9 +476,9 @@ class TransferContent(BaseScreen):
         self.app.dashboard.show_tab("wallet")
 
 
-# ══════════════════════════════
+
 #  ИСТОРИЯ
-# ══════════════════════════════
+
 
 class HistoryContent(BaseScreen):
 
@@ -510,9 +510,9 @@ class HistoryContent(BaseScreen):
         text_widget.configure(state="disabled")
 
 
-# ══════════════════════════════
+
 #  ПРОФИЛЬ
-# ══════════════════════════════
+
 
 class ProfileContent(BaseScreen):
 
@@ -586,9 +586,9 @@ class ProfileContent(BaseScreen):
         self.app.show("login")
 
 
-# ══════════════════════════════
+
 #  DASHBOARD — 3 ВКЛАДКИ ВНИЗУ
-# ══════════════════════════════
+
 
 class DashboardScreen(BaseScreen):
 
@@ -627,7 +627,7 @@ class DashboardScreen(BaseScreen):
         self.show_tab("wallet")
 
     def show_tab(self, tab_name):
-        """Переключает вкладку на dashboard."""
+        #Переключает вкладку на dashboard
 
         # Обновляем данные пользователя из базы
         if self.app.current_user:
@@ -662,9 +662,9 @@ class DashboardScreen(BaseScreen):
         tab.pack(fill="both", expand=True)
 
 
-# ══════════════════════════════════════════
+
 #  ГЛАВНОЕ ПРИЛОЖЕНИЕ
-# ══════════════════════════════════════════
+
 
 class BankApp(tk.Tk):
 
@@ -702,14 +702,14 @@ class BankApp(tk.Tk):
         self.start_telegram_bot()
 
     def center_window(self):
-        """Центрирует окно на экране."""
+        #Центрирует окно на экране
         self.update_idletasks()
         x = (self.winfo_screenwidth() - 420) // 2
         y = (self.winfo_screenheight() - 700) // 2
         self.geometry(f"+{x}+{y}")
 
     def show(self, screen_name):
-        """Переключает экран приложения."""
+        #Переключает экран приложения
         # Удаляем всё из контейнера
         for widget in self.main_container.winfo_children():
             widget.destroy()
@@ -733,7 +733,7 @@ class BankApp(tk.Tk):
             self.dashboard = screen
 
     def log(self, message):
-        """Выводит сообщение в консоль и статус-бар."""
+        #Выводит сообщение в консоль и статус-бар
         from datetime import datetime
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] {message}")
@@ -743,7 +743,7 @@ class BankApp(tk.Tk):
             pass
 
     def start_telegram_bot(self):
-        """Запускает Telegram-бота в отдельном потоке."""
+        #Запускает Telegram-бота в отдельном потоке
         try:
             self.tg_bot = TelegramBot(
                 self.db, self.history,
